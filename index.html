@@ -41,12 +41,8 @@
       <header class="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
         <h1 class="text-lg font-bold tracking-wide">TIMER WEB</h1>
         <div class="flex items-center gap-4">
-          <button @click="openHistory()" aria-label="History" class="text-zinc-300 hover:text-white">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
-          </button>
-          <button @click="openSettings()" aria-label="Settings" class="text-zinc-300 hover:text-white">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852 1 1.51 1H21a2 2 0 0 1 0 4h-.09c-.658 0-1.25.396-1.51 1z"/></svg>
-          </button>
+          <button @click="openHistory()" aria-label="History" class="h-6 w-6 text-zinc-300 hover:text-white" x-html="icon('history')"></button>
+          <button @click="openSettings()" aria-label="Settings" class="h-6 w-6 text-zinc-300 hover:text-white" x-html="icon('settings')"></button>
         </div>
       </header>
 
@@ -113,7 +109,7 @@
       <main x-show="activeTab === 'plus'" class="flex-1 overflow-y-auto px-4 py-6 space-y-3">
         <div class="flex items-center justify-between">
           <h2 class="text-xl font-extrabold uppercase">Plus</h2>
-          <button @click="openEditor(null)" class="h-10 w-10 rounded-full bg-[var(--accent)] text-black text-2xl leading-none font-bold flex items-center justify-center" aria-label="Add workout">+</button>
+          <button @click="openEditor(null)" class="h-10 w-10 p-2.5 rounded-full bg-[var(--accent)] text-black flex items-center justify-center" aria-label="Add workout" x-html="icon('plus')"></button>
         </div>
 
         <p x-show="customTemplates.length === 0" class="text-zinc-400 text-sm">No custom workouts yet. Tap + to create one.</p>
@@ -124,9 +120,9 @@
               <span class="h-4 w-4 rounded-full shrink-0" :style="`background-color:${template.color}`"></span>
               <span class="font-semibold" x-text="template.name"></span>
             </button>
-            <button @click="duplicateTemplateAction(template)" class="text-zinc-400 hover:text-white text-sm px-2" aria-label="Duplicate">⧉</button>
-            <button @click="openEditor(template)" class="text-zinc-400 hover:text-white text-sm px-2" aria-label="Edit">✎</button>
-            <button @click="deleteTemplate(template)" class="text-red-400 hover:text-red-300 text-sm px-2" aria-label="Delete">✕</button>
+            <button @click="duplicateTemplateAction(template)" class="h-5 w-5 text-zinc-400 hover:text-white" aria-label="Duplicate" x-html="icon('copy')"></button>
+            <button @click="openEditor(template)" class="h-5 w-5 text-zinc-400 hover:text-white" aria-label="Edit" x-html="icon('pencil')"></button>
+            <button @click="deleteTemplate(template)" class="h-5 w-5 text-red-400 hover:text-red-300" aria-label="Delete" x-html="icon('trash')"></button>
           </div>
         </template>
       </main>
@@ -135,19 +131,19 @@
       <nav class="grid grid-cols-4 border-t border-zinc-800 bg-zinc-900">
         <button @click="onTabChange('tabata')" class="py-3 flex flex-col items-center gap-1 text-xs font-semibold uppercase"
                 :class="activeTab === 'tabata' ? 'text-[var(--accent)]' : 'text-zinc-400'">
-          <span>⏱</span><span>Tabata</span>
+          <span class="h-5 w-5 mx-auto" x-html="icon('tabata')"></span><span>Tabata</span>
         </button>
         <button @click="onTabChange('rounds')" class="py-3 flex flex-col items-center gap-1 text-xs font-semibold uppercase"
                 :class="activeTab === 'rounds' ? 'text-[var(--accent)]' : 'text-zinc-400'">
-          <span>◐</span><span>Rounds</span>
+          <span class="h-5 w-5 mx-auto" x-html="icon('rounds')"></span><span>Rounds</span>
         </button>
         <button @click="onTabChange('stopwatch')" class="py-3 flex flex-col items-center gap-1 text-xs font-semibold uppercase"
                 :class="activeTab === 'stopwatch' ? 'text-[var(--accent)]' : 'text-zinc-400'">
-          <span>◷</span><span>Stopwatch</span>
+          <span class="h-5 w-5 mx-auto" x-html="icon('stopwatch')"></span><span>Stopwatch</span>
         </button>
         <button @click="onTabChange('plus')" class="py-3 flex flex-col items-center gap-1 text-xs font-semibold uppercase"
                 :class="activeTab === 'plus' ? 'text-[var(--accent)]' : 'text-zinc-400'">
-          <span>+</span><span>Plus</span>
+          <span class="h-5 w-5 mx-auto" x-html="icon('plus')"></span><span>Plus</span>
         </button>
       </nav>
     </div>
@@ -157,10 +153,10 @@
 
       <!-- Top bar -->
       <div class="flex items-center justify-between px-4 py-3 text-current/80">
-        <button @click="exitSession()" aria-label="Close" class="text-2xl leading-none">✕</button>
+        <button @click="exitSession()" aria-label="Close" class="h-6 w-6" x-html="icon('close')"></button>
         <div class="flex items-center gap-4">
-          <button @click="openHistory()" aria-label="History">⏱</button>
-          <button @click="openSettings()" aria-label="Settings">⚙</button>
+          <button @click="openHistory()" aria-label="History" class="h-6 w-6" x-html="icon('history')"></button>
+          <button @click="openSettings()" aria-label="Settings" class="h-6 w-6" x-html="icon('settings')"></button>
         </div>
       </div>
 
@@ -205,11 +201,9 @@
         </div>
 
         <div class="flex items-center justify-center gap-6">
-          <button @click="previousPhase()" aria-label="Previous phase" class="text-2xl">«</button>
-          <button @click="togglePause()" class="h-14 w-14 rounded-full bg-black/20 flex items-center justify-center text-2xl" aria-label="Play/Pause">
-            <span x-text="sessionState.status === 'running' ? '❚❚' : '►'"></span>
-          </button>
-          <button @click="nextPhase()" aria-label="Next phase" class="text-2xl">»</button>
+          <button @click="previousPhase()" aria-label="Previous phase" class="h-6 w-6" x-html="icon('chevronsLeft')"></button>
+          <button @click="togglePause()" class="h-14 w-14 p-4 rounded-full bg-black/20 flex items-center justify-center" aria-label="Play/Pause" x-html="icon(sessionState.status === 'running' ? 'pause' : 'play')"></button>
+          <button @click="nextPhase()" aria-label="Next phase" class="h-6 w-6" x-html="icon('chevronsRight')"></button>
         </div>
 
         <div class="text-right">
@@ -352,7 +346,7 @@
 
         <div class="flex items-center justify-between">
           <div>
-            <div>Fun mode 🎉</div>
+            <div>Fun mode</div>
             <p class="text-xs text-zinc-400">Animated progress ring + bouncy countdown, confetti when a workout finishes.</p>
           </div>
           <input type="checkbox" x-model="settings.funMode" @change="onSettingsChange()" class="h-6 w-11 accent-[var(--accent)] shrink-0 ml-3" />
@@ -415,7 +409,7 @@
                 <span x-text="entry.status"></span>
               </div>
             </div>
-            <button @click="deleteHistoryEntry(entry.id)" class="text-red-400 text-sm px-2" aria-label="Delete entry">✕</button>
+            <button @click="deleteHistoryEntry(entry.id)" class="h-5 w-5 text-red-400 shrink-0" aria-label="Delete entry" x-html="icon('trash')"></button>
           </div>
         </template>
       </main>

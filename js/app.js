@@ -11,6 +11,7 @@ import { createEmptyTemplate, duplicateTemplate, validateTemplate } from './view
 import { SOUND_PRESETS, formatVolumePercent } from './views/settings-view.js';
 import { PHASE_COLOR_PRESETS } from './storage.js';
 import { formatHistoryEntry } from './views/history-view.js';
+import { icon } from './icons.js';
 
 function appRoot() {
   const engine = new TimerEngine();
@@ -236,6 +237,7 @@ function appRoot() {
     formatVolumePercent,
     formatHistoryEntry,
     ringDashoffset,
+    icon,
 
     // --- editor (Plus tab) ---
     openEditor(template) {

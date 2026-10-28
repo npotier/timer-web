@@ -1,7 +1,10 @@
-// Cache-first offline shell (research.md §6). No backend/API to keep fresh, so a simple
-// precache + cache-first strategy is sufficient (constitution Principle V: simplest correct
-// approach). Bump CACHE_NAME to force old caches to be dropped on the next activate.
-const CACHE_NAME = 'timerweb-shell-v2';
+// Network-first offline shell (research.md §6, revised). Cache-first was tried first but it never
+// revalidates against the network once a URL is cached, so app updates silently stopped reaching
+// returning visitors until this file's own bytes happened to change too. Network-first fixes that:
+// online visitors always get the latest deployed files, while offline visitors (or a failed fetch)
+// fall back to whatever was last cached — satisfying FR-019/SC-005 without the staleness bug.
+// Bump CACHE_NAME to force old cache entries to be dropped on the next activate.
+const CACHE_NAME = 'timerweb-shell-v3';
 
 const PRECACHE_URLS = [
   './',
@@ -14,6 +17,7 @@ const PRECACHE_URLS = [
   './js/audio.js',
   './js/haptics.js',
   './js/wakelock.js',
+  './js/icons.js',
   './js/views/session-view.js',
   './js/views/editor-view.js',
   './js/views/settings-view.js',
@@ -39,17 +43,14 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request)
-        .then((response) => {
-          if (response && response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          }
-          return response;
-        })
-        .catch(() => cached);
-    })
+    fetch(event.request)
+      .then((response) => {
+        if (response && response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });

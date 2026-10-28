@@ -76,17 +76,30 @@ constitution's Timer Accuracy and PWA Resilience principles.
   "active" (rejected — unreliable, resource-wasteful, and explicitly superseded by the standard
   Wake Lock API which is now broadly supported).
 
-## 6. PWA offline strategy
+## 6. PWA offline strategy (revised to network-first after a staleness bug)
 
-- **Decision**: A cache-first service worker that precaches the app shell (`index.html`, built
-  CSS/JS, icons, sound assets) on install, and serves from cache first, falling back to network
-  only for anything not precached. No network-first/stale-while-revalidate complexity is needed
-  since there is no backend/API to keep fresh.
-- **Rationale**: Satisfies FR-019/SC-005 (usable offline after one prior visit) with the simplest
-  correct strategy given a fully static, versioned asset set (Principle V).
-- **Alternatives considered**: Workbox (rejected — adds a dependency/build step for behavior a
-  ~40-line hand-written service worker already covers at this scope); no service worker
-  (rejected — fails the explicit PWA/offline requirement).
+- **Original decision**: A cache-first service worker that precaches the app shell on install and
+  serves from cache first, falling back to network only for anything not precached.
+- **Why it was revised**: Cache-first never revalidates a cached URL against the network — it only
+  refreshes when the service worker's own script bytes change (triggering reinstall). In practice,
+  a deploy that only changed `index.html`/`js/*.js` (not `service-worker.js` itself) left returning
+  visitors stuck on the previously cached version indefinitely, since the fetch handler never even
+  attempted a network request for an already-cached URL. This directly undermines the ability to
+  ship fixes/features, which matters more in practice than the marginal offline-speed benefit.
+- **Current decision**: Network-first. On `fetch`, always attempt the network first and cache a
+  successful response for next time; only fall back to the cache on a failed `fetch` (offline, or
+  the asset was never reachable). `CACHE_NAME` is still bumped on structural changes so stale
+  entries under an old name get swept in `activate`.
+- **Rationale**: Online visitors (the common case) always get the latest deployed files with no
+  manual cache-busting needed; offline visitors still get the last-known-good shell, satisfying
+  FR-019/SC-005. This stays within Principle V (still a ~15-line fetch handler) while fixing a real
+  correctness bug rather than optimizing for an offline case at the expense of the online case.
+- **Alternatives considered**: Workbox (rejected — adds a dependency/build step for behavior this
+  hand-written service worker already covers at this scope); stale-while-revalidate (considered —
+  would serve instantly from cache then update in the background, but still shows one
+  reload-behind content on the *first* request after a deploy; rejected in favor of network-first's
+  simpler, more immediately-correct behavior given this app's low traffic/latency sensitivity); no
+  service worker (rejected — fails the explicit PWA/offline requirement).
 
 ## 7. Deployment target
 
