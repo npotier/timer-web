@@ -1,0 +1,10 @@
+node_modules/
+dist/
+css/app.css
+*.log
+.DS_Store
+.env*
+
+# Reference screenshots of the third-party app that inspired this project — not needed in the
+# deployed site, and not ours to redistribute.
+spec-imgs/

@@ -1,0 +1,13 @@
+{
+  "name": "timer-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Interval workout timer PWA (Tabata/Rounds/Stopwatch) — static client-only app.",
+  "scripts": {
+    "dev": "npx serve .",
+    "build:css": "tailwindcss -i css/input.css -o css/app.css --minify"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.0"
+  }
+}

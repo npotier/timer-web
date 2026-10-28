@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Timer Web</title>
+  <meta name="description" content="Interval workout timer — Tabata, Rounds, Stopwatch, and custom workouts." />
+  <meta name="theme-color" content="#18181b" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="assets/icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+
+  <!-- Dev-time TailwindCSS (JIT via CDN, no build step required). For production, build
+       css/app.css with `npm run build:css` and swap this for a <link> to it. -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Fun mode celebration (Settings → Fun mode): tiny open-source confetti lib, loaded only via
+       CDN. If this fails to load (e.g. offline first visit), _celebrate() in app.js no-ops. -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js" defer></script>
+
+  <style>
+    html, body { height: 100%; overscroll-behavior: none; }
+    body { background-color: #18181b; color: #fff; }
+    [x-cloak] { display: none !important; }
+    .tabular-nums-digits { font-variant-numeric: tabular-nums; }
+
+    /* Fun mode: brief pop/bounce on the countdown digit each time the displayed second changes. */
+    @keyframes pulse-pop {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.12); }
+      100% { transform: scale(1); }
+    }
+    .animate-pop { animation: pulse-pop 0.3s ease-out; }
+  </style>
+</head>
+<body class="h-full">
+  <div x-data="appRoot()" x-init="init()" x-cloak class="h-full flex flex-col" :style="`--accent:${settings.themeColor}`">
+
+    <!-- ============================= HOME ============================= -->
+    <div x-show="view === 'home'" class="flex flex-col h-full">
+      <header class="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
+        <h1 class="text-lg font-bold tracking-wide">TIMER WEB</h1>
+        <div class="flex items-center gap-4">
+          <button @click="openHistory()" aria-label="History" class="text-zinc-300 hover:text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+          </button>
+          <button @click="openSettings()" aria-label="Settings" class="text-zinc-300 hover:text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852 1 1.51 1H21a2 2 0 0 1 0 4h-.09c-.658 0-1.25.396-1.51 1z"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Builtin mode config (Tabata / Rounds / Stopwatch) -->
+      <main x-show="activeTab !== 'plus'" class="flex-1 overflow-y-auto px-4 py-6 space-y-4">
+        <h2 class="text-xl font-extrabold uppercase" x-text="activeTab"></h2>
+
+        <div class="grid grid-cols-2 gap-3">
+          <label class="bg-zinc-800 rounded-lg p-3 flex flex-col gap-1">
+            <span class="text-xs uppercase text-zinc-400">Prepare (sec)</span>
+            <input type="number" min="0" step="1" class="bg-transparent text-2xl font-bold tabular-nums-digits outline-none"
+                   x-model.number="configDraft.prepareSec" @change="onConfigDraftChange()" />
+          </label>
+
+          <label class="bg-zinc-800 rounded-lg p-3 flex flex-col gap-1" x-show="activeTab !== 'stopwatch'">
+            <span class="text-xs uppercase text-zinc-400">Exercise (sec)</span>
+            <input type="number" min="1" step="1" class="bg-transparent text-2xl font-bold tabular-nums-digits outline-none"
+                   x-model.number="configDraft.exerciseSec" @change="onConfigDraftChange()" />
+          </label>
+
+          <label class="bg-zinc-800 rounded-lg p-3 flex flex-col gap-1">
+            <span class="text-xs uppercase text-zinc-400" x-text="activeTab === 'stopwatch' ? 'Lap every (sec)' : 'Rest (sec)'"></span>
+            <input type="number" min="0" step="1" class="bg-transparent text-2xl font-bold tabular-nums-digits outline-none"
+                   x-model.number="configDraft.restSec" @change="onConfigDraftChange()" />
+          </label>
+
+          <label class="bg-zinc-800 rounded-lg p-3 flex flex-col gap-1" x-show="activeTab !== 'stopwatch'">
+            <span class="text-xs uppercase text-zinc-400">Rounds</span>
+            <input type="number" min="1" step="1" class="bg-transparent text-2xl font-bold tabular-nums-digits outline-none"
+                   x-model.number="configDraft.rounds" @change="onConfigDraftChange()" />
+          </label>
+
+          <template x-if="activeTab === 'tabata'">
+            <label class="bg-zinc-800 rounded-lg p-3 flex flex-col gap-1">
+              <span class="text-xs uppercase text-zinc-400">Cycles</span>
+              <input type="number" min="1" step="1" class="bg-transparent text-2xl font-bold tabular-nums-digits outline-none"
+                     x-model.number="configDraft.cycles" @change="onConfigDraftChange()" />
+            </label>
+          </template>
+
+          <template x-if="activeTab === 'tabata'">
+            <label class="bg-zinc-800 rounded-lg p-3 flex flex-col gap-1">
+              <span class="text-xs uppercase text-zinc-400">Rest between cycles (sec)</span>
+              <input type="number" min="0" step="1" class="bg-transparent text-2xl font-bold tabular-nums-digits outline-none"
+                     x-model.number="configDraft.restBetweenCyclesSec" @change="onConfigDraftChange()" />
+            </label>
+          </template>
+
+          <template x-if="activeTab === 'tabata'">
+            <label class="bg-zinc-800 rounded-lg p-3 flex flex-col gap-1">
+              <span class="text-xs uppercase text-zinc-400">Cooldown (sec)</span>
+              <input type="number" min="0" step="1" class="bg-transparent text-2xl font-bold tabular-nums-digits outline-none"
+                     x-model.number="configDraft.cooldownSec" @change="onConfigDraftChange()" />
+            </label>
+          </template>
+        </div>
+
+        <button @click="startBuiltinSession()" class="w-full mt-4 py-4 rounded-full bg-[var(--accent)] text-black text-lg font-extrabold uppercase tracking-wide">
+          Start
+        </button>
+      </main>
+
+      <!-- Plus tab: custom workouts -->
+      <main x-show="activeTab === 'plus'" class="flex-1 overflow-y-auto px-4 py-6 space-y-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-extrabold uppercase">Plus</h2>
+          <button @click="openEditor(null)" class="h-10 w-10 rounded-full bg-[var(--accent)] text-black text-2xl leading-none font-bold flex items-center justify-center" aria-label="Add workout">+</button>
+        </div>
+
+        <p x-show="customTemplates.length === 0" class="text-zinc-400 text-sm">No custom workouts yet. Tap + to create one.</p>
+
+        <template x-for="template in customTemplates" :key="template.id">
+          <div class="bg-zinc-800 rounded-lg p-4 flex items-center gap-3">
+            <button class="flex items-center gap-3 flex-1 text-left" @click="launchTemplate(template)">
+              <span class="h-4 w-4 rounded-full shrink-0" :style="`background-color:${template.color}`"></span>
+              <span class="font-semibold" x-text="template.name"></span>
+            </button>
+            <button @click="duplicateTemplateAction(template)" class="text-zinc-400 hover:text-white text-sm px-2" aria-label="Duplicate">⧉</button>
+            <button @click="openEditor(template)" class="text-zinc-400 hover:text-white text-sm px-2" aria-label="Edit">✎</button>
+            <button @click="deleteTemplate(template)" class="text-red-400 hover:text-red-300 text-sm px-2" aria-label="Delete">✕</button>
+          </div>
+        </template>
+      </main>
+
+      <!-- Bottom navigation -->
+      <nav class="grid grid-cols-4 border-t border-zinc-800 bg-zinc-900">
+        <button @click="onTabChange('tabata')" class="py-3 flex flex-col items-center gap-1 text-xs font-semibold uppercase"
+                :class="activeTab === 'tabata' ? 'text-[var(--accent)]' : 'text-zinc-400'">
+          <span>⏱</span><span>Tabata</span>
+        </button>
+        <button @click="onTabChange('rounds')" class="py-3 flex flex-col items-center gap-1 text-xs font-semibold uppercase"
+                :class="activeTab === 'rounds' ? 'text-[var(--accent)]' : 'text-zinc-400'">
+          <span>◐</span><span>Rounds</span>
+        </button>
+        <button @click="onTabChange('stopwatch')" class="py-3 flex flex-col items-center gap-1 text-xs font-semibold uppercase"
+                :class="activeTab === 'stopwatch' ? 'text-[var(--accent)]' : 'text-zinc-400'">
+          <span>◷</span><span>Stopwatch</span>
+        </button>
+        <button @click="onTabChange('plus')" class="py-3 flex flex-col items-center gap-1 text-xs font-semibold uppercase"
+                :class="activeTab === 'plus' ? 'text-[var(--accent)]' : 'text-zinc-400'">
+          <span>+</span><span>Plus</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- ============================= SESSION (fullscreen) ============================= -->
+    <div x-show="view === 'session'" class="fixed inset-0 z-50 flex flex-col" :class="phaseColorClasses(sessionState.currentPhase?.type)">
+
+      <!-- Top bar -->
+      <div class="flex items-center justify-between px-4 py-3 text-current/80">
+        <button @click="exitSession()" aria-label="Close" class="text-2xl leading-none">✕</button>
+        <div class="flex items-center gap-4">
+          <button @click="openHistory()" aria-label="History">⏱</button>
+          <button @click="openSettings()" aria-label="Settings">⚙</button>
+        </div>
+      </div>
+
+      <!-- Main countdown area: adapts to orientation (FR-008) -->
+      <div class="flex-1 flex" :class="isLandscape ? 'flex-row' : 'flex-col'">
+        <div class="flex-1 flex flex-col items-center justify-center text-center px-4">
+          <div class="text-xl md:text-2xl font-bold uppercase tracking-widest mb-2" x-text="phaseLabel(sessionState.currentPhase?.type)"></div>
+
+          <div class="relative flex items-center justify-center" :class="isLandscape ? 'h-[62vh] w-[62vh]' : 'h-[72vw] w-[72vw]'">
+            <!-- Fun mode: decorative progress ring, purely derived from sessionState each tick —
+                 never an independent timer (constitution Principle II). -->
+            <svg x-show="settings.funMode" viewBox="0 0 100 100" class="absolute inset-0 -rotate-90 pointer-events-none" aria-hidden="true">
+              <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" stroke-opacity="0.15" stroke-width="4" />
+              <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"
+                      :stroke-dasharray="ringCircumference"
+                      :stroke-dashoffset="ringDashoffset(sessionState.currentPhase, sessionState.remainingMs)"
+                      style="transition: stroke-dashoffset 0.2s linear" />
+            </svg>
+
+            <div class="relative font-black tabular-nums-digits leading-none"
+                 :class="[isLandscape ? 'text-[16vh]' : 'text-[22vw]', settings.funMode && pulseActive ? 'animate-pop' : '']"
+                 x-text="sessionState.currentPhase?.type === 'stopwatch-run' ? formatElapsed(sessionState.elapsedStopwatchMs) : formatDuration(sessionState.remainingMs)">
+            </div>
+          </div>
+        </div>
+
+        <!-- Up next -->
+        <div class="flex items-center justify-center px-6"
+             :class="isLandscape ? 'w-40 flex-col border-l border-black/10' : 'h-20 border-t border-black/10'"
+             x-show="sessionState.nextPhase">
+          <span class="text-xs uppercase opacity-70 mr-2" x-show="!isLandscape">Up next</span>
+          <span class="text-xs uppercase opacity-70 mb-1" x-show="isLandscape">Up next</span>
+          <span class="font-extrabold uppercase" x-text="phaseLabel(sessionState.nextPhase?.type)"></span>
+        </div>
+      </div>
+
+      <!-- Bottom controls -->
+      <div class="grid grid-cols-3 items-center px-6 py-4 bg-black/10">
+        <div class="text-left">
+          <div class="text-xs uppercase opacity-70" x-show="sessionState.mode !== 'stopwatch'">Rounds left</div>
+          <div class="text-2xl font-black tabular-nums-digits" x-show="sessionState.mode !== 'stopwatch'" x-text="sessionState.roundsRemaining"></div>
+        </div>
+
+        <div class="flex items-center justify-center gap-6">
+          <button @click="previousPhase()" aria-label="Previous phase" class="text-2xl">«</button>
+          <button @click="togglePause()" class="h-14 w-14 rounded-full bg-black/20 flex items-center justify-center text-2xl" aria-label="Play/Pause">
+            <span x-text="sessionState.status === 'running' ? '❚❚' : '►'"></span>
+          </button>
+          <button @click="nextPhase()" aria-label="Next phase" class="text-2xl">»</button>
+        </div>
+
+        <div class="text-right">
+          <div class="text-xs uppercase opacity-70" x-show="sessionState.mode === 'tabata'">Cycles left</div>
+          <div class="text-2xl font-black tabular-nums-digits" x-show="sessionState.mode === 'tabata'" x-text="sessionState.cyclesRemaining"></div>
+        </div>
+      </div>
+
+      <!-- Completion overlay -->
+      <div x-show="sessionState.status === 'finished' || sessionState.status === 'stopped'"
+           class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center gap-4 text-white">
+        <div class="text-2xl font-extrabold uppercase" x-text="sessionState.status === 'finished' ? 'Workout complete!' : 'Workout stopped'"></div>
+        <button @click="exitSession()" class="px-8 py-3 rounded-full bg-[var(--accent)] text-black font-bold uppercase">Done</button>
+      </div>
+    </div>
+
+    <!-- ============================= EDITOR ============================= -->
+    <div x-show="view === 'editor'" class="fixed inset-0 z-50 bg-zinc-900 flex flex-col">
+      <header class="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
+        <button @click="cancelEditor()" class="text-zinc-300">Cancel</button>
+        <h2 class="font-bold uppercase" x-text="editingTemplate?.id ? 'Edit Workout' : 'New Workout'"></h2>
+        <button @click="saveEditor()" class="text-[var(--accent)] font-bold">Save</button>
+      </header>
+
+      <main class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        <div>
+          <label class="text-xs uppercase text-zinc-400">Name</label>
+          <input type="text" maxlength="40" x-model="editingTemplate.name"
+                 class="w-full mt-1 bg-zinc-800 rounded-lg p-3 outline-none" />
+          <p class="text-red-400 text-xs mt-1" x-show="editingErrors.name" x-text="editingErrors.name"></p>
+        </div>
+
+        <div>
+          <label class="text-xs uppercase text-zinc-400 block mb-2">Color</label>
+          <div class="flex gap-2">
+            <template x-for="c in ['#facc15','#a3e635','#38bdf8','#f97316','#f43f5e','#a78bfa']" :key="c">
+              <button type="button" @click="editingTemplate.color = c" class="h-8 w-8 rounded-full border-2"
+                      :style="`background-color:${c}`" :class="editingTemplate.color === c ? 'border-white' : 'border-transparent'"></button>
+            </template>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs uppercase text-zinc-400">Mode</label>
+          <select x-model="editingTemplate.mode" class="w-full mt-1 bg-zinc-800 rounded-lg p-3 outline-none">
+            <option value="tabata">Tabata</option>
+            <option value="rounds">Rounds</option>
+            <option value="stopwatch">Stopwatch</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs uppercase text-zinc-400">Prepare (sec)</label>
+            <input type="number" min="0" x-model.number="editingTemplate.prepareSec" class="w-full mt-1 bg-zinc-800 rounded-lg p-3 outline-none" />
+            <p class="text-red-400 text-xs mt-1" x-show="editingErrors.prepareSec" x-text="editingErrors.prepareSec"></p>
+          </div>
+          <div x-show="editingTemplate?.mode !== 'stopwatch'">
+            <label class="text-xs uppercase text-zinc-400">Exercise (sec)</label>
+            <input type="number" min="1" x-model.number="editingTemplate.exerciseSec" class="w-full mt-1 bg-zinc-800 rounded-lg p-3 outline-none" />
+            <p class="text-red-400 text-xs mt-1" x-show="editingErrors.exerciseSec" x-text="editingErrors.exerciseSec"></p>
+          </div>
+          <div>
+            <label class="text-xs uppercase text-zinc-400" x-text="editingTemplate?.mode === 'stopwatch' ? 'Lap every (sec)' : 'Rest (sec)'"></label>
+            <input type="number" min="0" x-model.number="editingTemplate.restSec" class="w-full mt-1 bg-zinc-800 rounded-lg p-3 outline-none" />
+            <p class="text-red-400 text-xs mt-1" x-show="editingErrors.restSec" x-text="editingErrors.restSec"></p>
+          </div>
+          <div x-show="editingTemplate?.mode !== 'stopwatch'">
+            <label class="text-xs uppercase text-zinc-400">Rounds</label>
+            <input type="number" min="1" x-model.number="editingTemplate.rounds" class="w-full mt-1 bg-zinc-800 rounded-lg p-3 outline-none" />
+            <p class="text-red-400 text-xs mt-1" x-show="editingErrors.rounds" x-text="editingErrors.rounds"></p>
+          </div>
+          <template x-if="editingTemplate?.mode === 'tabata'">
+            <div>
+              <label class="text-xs uppercase text-zinc-400">Cycles</label>
+              <input type="number" min="1" x-model.number="editingTemplate.cycles" class="w-full mt-1 bg-zinc-800 rounded-lg p-3 outline-none" />
+              <p class="text-red-400 text-xs mt-1" x-show="editingErrors.cycles" x-text="editingErrors.cycles"></p>
+            </div>
+          </template>
+          <template x-if="editingTemplate?.mode === 'tabata'">
+            <div>
+              <label class="text-xs uppercase text-zinc-400">Rest between cycles (sec)</label>
+              <input type="number" min="0" x-model.number="editingTemplate.restBetweenCyclesSec" class="w-full mt-1 bg-zinc-800 rounded-lg p-3 outline-none" />
+              <p class="text-red-400 text-xs mt-1" x-show="editingErrors.restBetweenCyclesSec" x-text="editingErrors.restBetweenCyclesSec"></p>
+            </div>
+          </template>
+          <template x-if="editingTemplate?.mode === 'tabata'">
+            <div>
+              <label class="text-xs uppercase text-zinc-400">Cooldown (sec)</label>
+              <input type="number" min="0" x-model.number="editingTemplate.cooldownSec" class="w-full mt-1 bg-zinc-800 rounded-lg p-3 outline-none" />
+              <p class="text-red-400 text-xs mt-1" x-show="editingErrors.cooldownSec" x-text="editingErrors.cooldownSec"></p>
+            </div>
+          </template>
+        </div>
+
+        <p class="text-red-400 text-sm" x-show="editingErrors._storage" x-text="editingErrors._storage"></p>
+      </main>
+    </div>
+
+    <!-- ============================= SETTINGS ============================= -->
+    <div x-show="view === 'settings'" class="fixed inset-0 z-50 bg-zinc-900 flex flex-col">
+      <header class="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
+        <h2 class="font-bold uppercase">Settings</h2>
+        <button @click="closeSettings()" class="text-[var(--accent)] font-bold">Done</button>
+      </header>
+
+      <main class="flex-1 overflow-y-auto px-4 py-4 space-y-5">
+        <div class="flex items-center justify-between">
+          <span>Sound effects</span>
+          <input type="checkbox" x-model="settings.soundEnabled" @change="onSettingsChange()" class="h-6 w-11 accent-[var(--accent)]" />
+        </div>
+
+        <div>
+          <label class="text-xs uppercase text-zinc-400 block mb-1">Sound preset</label>
+          <select x-model="settings.soundPreset" @change="onSettingsChange()" class="w-full bg-zinc-800 rounded-lg p-3 outline-none">
+            <template x-for="preset in soundPresets" :key="preset">
+              <option :value="preset" x-text="preset"></option>
+            </template>
+          </select>
+        </div>
+
+        <div>
+          <label class="text-xs uppercase text-zinc-400 block mb-1">
+            Volume — <span x-text="formatVolumePercent(settings.volume)"></span>
+          </label>
+          <input type="range" min="0" max="1" step="0.05" x-model.number="settings.volume" @change="onSettingsChange()" class="w-full accent-[var(--accent)]" />
+        </div>
+
+        <div class="flex items-center justify-between">
+          <span>Tick sound (every second)</span>
+          <input type="checkbox" x-model="settings.tickSoundEnabled" @change="onSettingsChange()" class="h-6 w-11 accent-[var(--accent)]" />
+        </div>
+
+        <div class="flex items-center justify-between">
+          <span>Vibration</span>
+          <input type="checkbox" x-model="settings.vibrationEnabled" @change="onSettingsChange()" class="h-6 w-11 accent-[var(--accent)]" />
+        </div>
+
+        <hr class="border-zinc-800" />
+
+        <div class="flex items-center justify-between">
+          <div>
+            <div>Fun mode 🎉</div>
+            <p class="text-xs text-zinc-400">Animated progress ring + bouncy countdown, confetti when a workout finishes.</p>
+          </div>
+          <input type="checkbox" x-model="settings.funMode" @change="onSettingsChange()" class="h-6 w-11 accent-[var(--accent)] shrink-0 ml-3" />
+        </div>
+
+        <hr class="border-zinc-800" />
+
+        <div>
+          <label class="text-xs uppercase text-zinc-400 block mb-2">Theme color</label>
+          <div class="flex flex-wrap gap-3">
+            <template x-for="preset in themePresets" :key="preset.color">
+              <button type="button" @click="settings.themeColor = preset.color; onSettingsChange()"
+                      class="h-10 w-10 rounded-full border-2 flex items-center justify-center"
+                      :style="`background-color:${preset.color}`"
+                      :class="settings.themeColor === preset.color ? 'border-white' : 'border-transparent'"
+                      :aria-label="preset.name" :title="preset.name">
+              </button>
+            </template>
+
+            <label class="h-10 w-10 rounded-full border-2 border-dashed border-zinc-500 flex items-center justify-center cursor-pointer text-zinc-400 text-xs"
+                   title="Custom color">
+              <span aria-hidden="true">✎</span>
+              <input type="color" x-model="settings.themeColor" @change="onSettingsChange()" class="sr-only" />
+            </label>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- ============================= HISTORY ============================= -->
+    <div x-show="view === 'history'" class="fixed inset-0 z-50 bg-zinc-900 flex flex-col">
+      <header class="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
+        <h2 class="font-bold uppercase">History</h2>
+        <button @click="closeHistory()" class="text-[var(--accent)] font-bold">Done</button>
+      </header>
+
+      <main class="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+        <button @click="clearHistory()" x-show="history.length > 0" class="text-red-400 text-sm">Clear history</button>
+        <p x-show="history.length === 0" class="text-zinc-400 text-sm">No workouts recorded yet.</p>
+
+        <template x-for="entry in history" :key="entry.id">
+          <div class="bg-zinc-800 rounded-lg p-4 flex items-center justify-between gap-3">
+            <div>
+              <div class="font-semibold uppercase" x-text="entry.workoutName"></div>
+              <div class="text-xs text-zinc-400" x-text="formatHistoryEntry(entry).dateLabel"></div>
+              <div class="text-xs text-zinc-400">
+                <span x-text="formatHistoryEntry(entry).durationLabel"></span> ·
+                <span x-text="formatHistoryEntry(entry).progressLabel"></span> ·
+                <span x-text="entry.status"></span>
+              </div>
+            </div>
+            <button @click="deleteHistoryEntry(entry.id)" class="text-red-400 text-sm px-2" aria-label="Delete entry">✕</button>
+          </div>
+        </template>
+      </main>
+    </div>
+
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
