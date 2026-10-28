@@ -79,7 +79,7 @@ A single persisted object (one row, not a list) read by `audio.js`/`haptics.js` 
 | `tickSoundEnabled` | boolean | Per-second tick/click during the last seconds of a phase; default `false` |
 | `vibrationEnabled` | boolean | Default `false`; no-op where Vibration API is unsupported |
 | `funMode` | boolean | Default `false`. Toggles purely decorative/motivational effects: a depleting progress ring and a brief per-second "pop" scale on the countdown digit during a session, and a confetti burst when a session reaches `status: finished` (not on an early stop). Never affects timing or `Session`/`Phase` state — display-only, derived from the same `sessionState` each tick |
-| `themeColor` | string (hex) | Default `#a3e635` (the "Lime" preset). Drives a single CSS custom property applied app-wide for interactive accents (Start button, active tab, primary actions) — never the fixed phase colors (Prepare/Exercise/Rest) from FR-005. Five named presets are offered in Settings (including a "Marseille" preset) plus a free-form color picker for any custom value |
+| `phaseColors` | object `{ prepare, exercise, rest }` (hex strings) | Default `{ prepare: '#facc15', exercise: '#a3e635', rest: '#ef4444' }` (the "Classic" preset). These are the full-screen session colors from FR-005 — user-configurable per FR-023. Rest-between-cycles and Cooldown phases reuse `rest`; Stopwatch's running phase reuses `exercise`. `exercise` additionally drives the app's interactive accent (Start button, active tab) via a CSS custom property, matching the reference app where the "go" color and the UI accent are the same color. Five named presets are offered in Settings (including a "Marseille" preset) plus a free-form color picker per phase |
 
 ## Relationships
 

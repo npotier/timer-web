@@ -9,14 +9,17 @@ const KEYS = {
   SETTINGS: 'timerweb.settings.v1',
 };
 
-// App accent-color presets (Settings → Theme). Purely cosmetic (CSS custom property), never
-// affects phase colors (Prepare/Exercise/Rest keep their fixed meaning per FR-005).
-export const THEME_PRESETS = [
-  { name: 'Lime', color: '#a3e635' },
-  { name: 'Marseille', color: '#00a3e0' },
-  { name: 'Sunset', color: '#fb923c' },
-  { name: 'Berry', color: '#f43f5e' },
-  { name: 'Grape', color: '#a78bfa' },
+// Phase color presets (Settings → Phase colors). Each preset defines the three colors shown
+// full-screen during a session (FR-005: Prepare / Exercise+Work / Rest — Rest-between-cycles and
+// Cooldown reuse the Rest color, Stopwatch's running phase reuses the Exercise color). The
+// Exercise color doubles as the app's interactive accent (Start button, active tab), matching the
+// reference app where the "go" color and the UI accent are the same green.
+export const PHASE_COLOR_PRESETS = [
+  { name: 'Classic', prepare: '#facc15', exercise: '#a3e635', rest: '#ef4444' },
+  { name: 'Marseille', prepare: '#0a2342', exercise: '#00a3e0', rest: '#ffffff' },
+  { name: 'Sunset', prepare: '#fde047', exercise: '#fb923c', rest: '#e11d48' },
+  { name: 'Berry', prepare: '#fbbf24', exercise: '#ec4899', rest: '#be123c' },
+  { name: 'Grape', prepare: '#fcd34d', exercise: '#8b5cf6', rest: '#5b21b6' },
 ];
 
 const DEFAULT_SETTINGS = Object.freeze({
@@ -26,7 +29,7 @@ const DEFAULT_SETTINGS = Object.freeze({
   tickSoundEnabled: false,
   vibrationEnabled: false,
   funMode: false,
-  themeColor: THEME_PRESETS[0].color,
+  phaseColors: { prepare: PHASE_COLOR_PRESETS[0].prepare, exercise: PHASE_COLOR_PRESETS[0].exercise, rest: PHASE_COLOR_PRESETS[0].rest },
 });
 
 export const BUILTIN_TEMPLATES = [
@@ -136,14 +139,20 @@ export function deleteTemplate(id) {
   return safeWrite(KEYS.TEMPLATES, templates);
 }
 
+// phaseColors is a nested object — always return/write a fresh copy of it so callers mutating
+// settings.phaseColors.* (two-way x-model bindings) never mutate the frozen DEFAULT_SETTINGS.
+function withFreshPhaseColors(settings) {
+  return { ...DEFAULT_SETTINGS.phaseColors, ...(settings.phaseColors || {}) };
+}
+
 export function getSettings() {
   const stored = safeRead(KEYS.SETTINGS, null);
-  if (!stored || typeof stored !== 'object') return { ...DEFAULT_SETTINGS };
-  return { ...DEFAULT_SETTINGS, ...stored };
+  if (!stored || typeof stored !== 'object') return { ...DEFAULT_SETTINGS, phaseColors: { ...DEFAULT_SETTINGS.phaseColors } };
+  return { ...DEFAULT_SETTINGS, ...stored, phaseColors: withFreshPhaseColors(stored) };
 }
 
 export function saveSettings(settings) {
-  return safeWrite(KEYS.SETTINGS, { ...DEFAULT_SETTINGS, ...settings });
+  return safeWrite(KEYS.SETTINGS, { ...DEFAULT_SETTINGS, ...settings, phaseColors: withFreshPhaseColors(settings) });
 }
 
 export function getHistory() {

@@ -5,11 +5,11 @@ import * as audio from './audio.js';
 import * as haptics from './haptics.js';
 import * as wakelock from './wakelock.js';
 import {
-  phaseLabel, phaseColorClasses, formatDuration, formatElapsed, ringDashoffset, RING_CIRCUMFERENCE,
+  phaseLabel, phaseStyle, formatDuration, formatElapsed, ringDashoffset, RING_CIRCUMFERENCE,
 } from './views/session-view.js';
 import { createEmptyTemplate, duplicateTemplate, validateTemplate } from './views/editor-view.js';
 import { SOUND_PRESETS, formatVolumePercent } from './views/settings-view.js';
-import { THEME_PRESETS } from './storage.js';
+import { PHASE_COLOR_PRESETS } from './storage.js';
 import { formatHistoryEntry } from './views/history-view.js';
 
 function appRoot() {
@@ -33,7 +33,7 @@ function appRoot() {
     sessionState: engine.getState(),
     isLandscape: window.matchMedia('(orientation: landscape)').matches,
     soundPresets: SOUND_PRESETS,
-    themePresets: THEME_PRESETS,
+    phaseColorPresets: PHASE_COLOR_PRESETS,
     pulseActive: false,
     ringCircumference: RING_CIRCUMFERENCE,
 
@@ -230,7 +230,7 @@ function appRoot() {
 
     // --- presentation helpers exposed to the template ---
     phaseLabel,
-    phaseColorClasses,
+    phaseStyle,
     formatDuration,
     formatElapsed,
     formatVolumePercent,
@@ -294,6 +294,16 @@ function appRoot() {
 
     onSettingsChange() {
       storage.saveSettings(this.settings);
+    },
+
+    applyPhaseColorPreset(preset) {
+      this.settings.phaseColors = { prepare: preset.prepare, exercise: preset.exercise, rest: preset.rest };
+      this.onSettingsChange();
+    },
+
+    isActivePhaseColorPreset(preset) {
+      const c = this.settings.phaseColors;
+      return c.prepare === preset.prepare && c.exercise === preset.exercise && c.rest === preset.rest;
     },
 
     // --- history ---

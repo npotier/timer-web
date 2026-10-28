@@ -34,7 +34,7 @@
   </style>
 </head>
 <body class="h-full">
-  <div x-data="appRoot()" x-init="init()" x-cloak class="h-full flex flex-col" :style="`--accent:${settings.themeColor}`">
+  <div x-data="appRoot()" x-init="init()" x-cloak class="h-full flex flex-col" :style="`--accent:${settings.phaseColors.exercise}`">
 
     <!-- ============================= HOME ============================= -->
     <div x-show="view === 'home'" class="flex flex-col h-full">
@@ -153,7 +153,7 @@
     </div>
 
     <!-- ============================= SESSION (fullscreen) ============================= -->
-    <div x-show="view === 'session'" class="fixed inset-0 z-50 flex flex-col" :class="phaseColorClasses(sessionState.currentPhase?.type)">
+    <div x-show="view === 'session'" class="fixed inset-0 z-50 flex flex-col" :style="phaseStyle(sessionState.currentPhase?.type, settings.phaseColors)">
 
       <!-- Top bar -->
       <div class="flex items-center justify-between px-4 py-3 text-current/80">
@@ -361,21 +361,32 @@
         <hr class="border-zinc-800" />
 
         <div>
-          <label class="text-xs uppercase text-zinc-400 block mb-2">Theme color</label>
-          <div class="flex flex-wrap gap-3">
-            <template x-for="preset in themePresets" :key="preset.color">
-              <button type="button" @click="settings.themeColor = preset.color; onSettingsChange()"
-                      class="h-10 w-10 rounded-full border-2 flex items-center justify-center"
-                      :style="`background-color:${preset.color}`"
-                      :class="settings.themeColor === preset.color ? 'border-white' : 'border-transparent'"
+          <label class="text-xs uppercase text-zinc-400 block mb-2">Phase colors — Prepare / Work / Rest</label>
+          <div class="flex flex-wrap gap-3 mb-4">
+            <template x-for="preset in phaseColorPresets" :key="preset.name">
+              <button type="button" @click="applyPhaseColorPreset(preset)"
+                      class="h-10 rounded-full border-2 overflow-hidden flex shrink-0"
+                      :class="isActivePhaseColorPreset(preset) ? 'border-white' : 'border-transparent'"
                       :aria-label="preset.name" :title="preset.name">
+                <span class="w-4 h-full" :style="`background-color:${preset.prepare}`"></span>
+                <span class="w-4 h-full" :style="`background-color:${preset.exercise}`"></span>
+                <span class="w-4 h-full" :style="`background-color:${preset.rest}`"></span>
               </button>
             </template>
+          </div>
 
-            <label class="h-10 w-10 rounded-full border-2 border-dashed border-zinc-500 flex items-center justify-center cursor-pointer text-zinc-400 text-xs"
-                   title="Custom color">
-              <span aria-hidden="true">✎</span>
-              <input type="color" x-model="settings.themeColor" @change="onSettingsChange()" class="sr-only" />
+          <div class="grid grid-cols-3 gap-3">
+            <label class="flex flex-col items-center gap-1 text-xs text-zinc-400 uppercase">
+              Prepare
+              <input type="color" x-model="settings.phaseColors.prepare" @change="onSettingsChange()" class="h-10 w-full rounded-lg bg-transparent" />
+            </label>
+            <label class="flex flex-col items-center gap-1 text-xs text-zinc-400 uppercase">
+              Work
+              <input type="color" x-model="settings.phaseColors.exercise" @change="onSettingsChange()" class="h-10 w-full rounded-lg bg-transparent" />
+            </label>
+            <label class="flex flex-col items-center gap-1 text-xs text-zinc-400 uppercase">
+              Rest
+              <input type="color" x-model="settings.phaseColors.rest" @change="onSettingsChange()" class="h-10 w-full rounded-lg bg-transparent" />
             </label>
           </div>
         </div>

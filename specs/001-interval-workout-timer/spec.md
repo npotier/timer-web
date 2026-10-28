@@ -118,7 +118,7 @@ A user wants the timer's audio/haptic feedback to suit their environment (e.g., 
 - **FR-020**: The system MUST NOT require any heart-rate sensor, Bluetooth device, user account, server-side storage, or voice-synthesis feature; all behavior described above must work without any of these.
 - **FR-021**: The system's UI text MUST be presented in English only for this version.
 - **FR-022**: The Settings screen MUST provide a single "Fun mode" toggle (default off) that, when enabled, adds purely decorative/motivational feedback — an animated progress indicator and bouncy countdown digit during a session, and a brief celebratory animation when a session is completed in full (not on an early stop) — without altering any timer, round, or cycle behavior.
-- **FR-023**: The Settings screen MUST offer at least 5 named accent-color presets (one themed after Olympique de Marseille) plus a custom color picker, applying the chosen color app-wide to interactive accents without changing the fixed Prepare/Exercise/Rest phase colors from FR-005.
+- **FR-023**: The Settings screen MUST let the user customize the Prepare/Exercise/Rest phase colors from FR-005, offering at least 5 named color-trio presets (one themed after Olympique de Marseille) plus an individual custom color picker per phase.
 
 ### Key Entities
 

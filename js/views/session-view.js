@@ -10,23 +10,44 @@ export const PHASE_LABELS = {
   'stopwatch-run': 'GO',
 };
 
-// Tailwind utility classes per phase, matching the reference app's color language
-// (FR-005: Prepare = yellow/amber, Exercise/Work = green, Rest = red).
-export const PHASE_COLOR_CLASSES = {
-  prepare: 'bg-yellow-400 text-black',
-  exercise: 'bg-lime-400 text-black',
-  rest: 'bg-red-500 text-white',
-  'rest-between-cycles': 'bg-yellow-400 text-black',
-  cooldown: 'bg-sky-400 text-black',
-  'stopwatch-run': 'bg-lime-400 text-black',
+// Maps each session phase to one of the three user-configurable Settings.phaseColors (FR-005,
+// FR-023): Prepare keeps its own color; Rest-between-cycles and Cooldown reuse Rest (same
+// "not working" meaning); Stopwatch's running phase reuses Exercise (the "go" color).
+const PHASE_COLOR_KEY = {
+  prepare: 'prepare',
+  exercise: 'exercise',
+  rest: 'rest',
+  'rest-between-cycles': 'rest',
+  cooldown: 'rest',
+  'stopwatch-run': 'exercise',
 };
 
 export function phaseLabel(phaseType) {
   return PHASE_LABELS[phaseType] || '';
 }
 
-export function phaseColorClasses(phaseType) {
-  return PHASE_COLOR_CLASSES[phaseType] || 'bg-zinc-800 text-white';
+/** Hex background color for a phase, from the user's configured Settings.phaseColors. */
+export function phaseBackgroundColor(phaseType, phaseColors) {
+  const key = PHASE_COLOR_KEY[phaseType] || 'exercise';
+  return (phaseColors && phaseColors[key]) || '#27272a';
+}
+
+/** Perceptual-luminance-based black/white text color so any custom phase color stays readable. */
+export function contrastTextColor(hexColor) {
+  const hex = (hexColor || '').replace('#', '');
+  if (hex.length !== 6) return '#000000';
+  const r = parseInt(hex.slice(0, 2), 16) / 255;
+  const g = parseInt(hex.slice(2, 4), 16) / 255;
+  const b = parseInt(hex.slice(4, 6), 16) / 255;
+  const toLinear = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  const luminance = 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
+  return luminance > 0.5 ? '#000000' : '#ffffff';
+}
+
+/** Inline style object for the fullscreen phase background + readable text color. */
+export function phaseStyle(phaseType, phaseColors) {
+  const background = phaseBackgroundColor(phaseType, phaseColors);
+  return { backgroundColor: background, color: contrastTextColor(background) };
 }
 
 /** Format milliseconds as a countdown string: M:SS, or H:MM:SS past one hour. */
