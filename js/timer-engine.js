@@ -256,6 +256,27 @@ export class TimerEngine {
     const totalRounds = this.template ? Math.max(1, Number(this.template.rounds) || 1) : 0;
     const totalCycles = this.template && this.template.mode === 'tabata' ? Math.max(1, Number(this.template.cycles) || 1) : 1;
 
+    // Total time actually spent working — sum of completed Exercise phases plus progress into the
+    // current one (Tabata/Rounds), or time spent in the ascending run phase (Stopwatch). Derived
+    // from phaseSequence/elapsedInPhaseMs each call, never an accumulated counter (Principle II).
+    let workedMs;
+    if (this.isStopwatch) {
+      workedMs = currentPhase && currentPhase.type === PHASE_TYPES.STOPWATCH_RUN ? elapsedInPhaseMs : 0;
+    } else {
+      workedMs = this.phaseSequence
+        .slice(0, this.currentPhaseIndex)
+        .reduce((sum, p) => sum + (p.type === PHASE_TYPES.EXERCISE ? p.durationMs : 0), 0);
+      if (currentPhase && currentPhase.type === PHASE_TYPES.EXERCISE) workedMs += elapsedInPhaseMs;
+    }
+
+    // Planned total: the sum of configured Exercise + Rest + Rest-between-cycles + Cooldown
+    // durations (excludes Prepare, which is a countdown before the workout, not part of it).
+    // Fixed for the whole session since phaseSequence doesn't change after start. Stopwatch has no
+    // fixed total (it runs until stopped), so there is none to report.
+    const totalPlannedMs = this.isStopwatch
+      ? null
+      : this.phaseSequence.reduce((sum, p) => (p.type === PHASE_TYPES.PREPARE ? sum : sum + p.durationMs), 0);
+
     return {
       status: this.status,
       mode: this.template ? this.template.mode : null,
@@ -271,6 +292,8 @@ export class TimerEngine {
       roundsRemaining: currentPhase ? Math.max(0, totalRounds - (currentPhase.roundNumber || 0) + (currentPhase.type === PHASE_TYPES.EXERCISE || currentPhase.type === PHASE_TYPES.REST ? 1 : 0)) : totalRounds,
       cyclesRemaining: currentPhase ? Math.max(0, totalCycles - (currentPhase.cycleNumber || 1) + 1) : totalCycles,
       totalDurationMs,
+      totalPlannedMs,
+      workedMs,
     };
   }
 }

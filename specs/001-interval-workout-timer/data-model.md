@@ -47,6 +47,12 @@ Represents one active run of a `WorkoutTemplate`, owned entirely by `timer-engin
 | `status` | enum: `idle` \| `running` \| `paused` \| `finished` \| `stopped` | Drives UI and whether a History Entry is written on exit |
 | `roundsCompleted` / `cyclesCompleted` | integer | Incremented as phases complete; written into the resulting History Entry |
 
+Derived (not stored, computed from the above on every `getState()` call): `totalPlannedMs` — the
+sum of the configured Exercise + Rest + Rest-between-cycles + Cooldown durations (excludes
+Prepare); `null` for Stopwatch, which has no fixed total. `workedMs` — time actually spent in
+Exercise phases (or the ascending run phase for Stopwatch). Shown on the session completion
+overlay as "Total time" / "Time worked".
+
 A `Phase` (sub-structure, not separately persisted): `{ type: 'prepare'|'exercise'|'rest'|
 'rest-between-cycles'|'cooldown'|'stopwatch-run', durationMs, roundNumber, cycleNumber, nextPhaseType
 }`. For `stopwatch` mode, phases are generated lazily (ascending, no fixed end) rather than
@@ -62,7 +68,8 @@ A persisted record written when a Session ends (FR-016), whether finished or sto
 | `workoutName` | string | Snapshot of the template's name at completion time (survives later template edits/deletes) |
 | `mode` | enum: `tabata` \| `rounds` \| `stopwatch` | |
 | `completedAt` | ISO 8601 string | Timestamp when the session ended |
-| `totalDurationMs` | integer | Actual elapsed wall-clock time of the session |
+| `totalDurationMs` | integer | Actual elapsed wall-clock time of the session (prepare + exercise + rest + cooldown) |
+| `workedDurationMs` | integer | Time actually spent in Exercise phases (Tabata/Rounds) or the ascending run phase (Stopwatch) — excludes Prepare/Rest/Cooldown; shown on the completion overlay |
 | `roundsCompleted` | integer | |
 | `cyclesCompleted` | integer | `0`/omitted for `rounds`/`stopwatch` modes |
 | `status` | enum: `finished` \| `stopped` | Distinguishes a full completion from an early stop (Edge Case / Acceptance Scenario 2 of User Story 3) |

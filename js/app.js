@@ -241,6 +241,7 @@ function appRoot() {
         mode: state.mode,
         completedAt: new Date().toISOString(),
         totalDurationMs: state.totalDurationMs,
+        workedDurationMs: state.workedMs,
         roundsCompleted: state.roundsCompleted,
         cyclesCompleted: state.cyclesCompleted,
         status: state.status,

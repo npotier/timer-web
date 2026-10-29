@@ -245,6 +245,16 @@
       <div x-show="sessionState.status === 'finished' || sessionState.status === 'stopped'"
            class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center gap-4 text-white">
         <div class="text-2xl font-extrabold uppercase" x-text="sessionState.status === 'finished' ? 'Workout complete!' : 'Workout stopped'"></div>
+        <div class="flex gap-8">
+          <div class="text-center">
+            <div class="text-xs uppercase opacity-70">Total time</div>
+            <div class="text-3xl font-black tabular-nums-digits" x-text="formatElapsed(sessionState.totalPlannedMs ?? sessionState.totalDurationMs)"></div>
+          </div>
+          <div class="text-center">
+            <div class="text-xs uppercase opacity-70">Time worked</div>
+            <div class="text-3xl font-black tabular-nums-digits" x-text="formatElapsed(sessionState.workedMs)"></div>
+          </div>
+        </div>
         <button @click="exitSession()" class="px-8 py-3 rounded-full bg-[var(--accent)] text-black font-bold uppercase">Done</button>
       </div>
     </div>

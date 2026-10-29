@@ -12,6 +12,11 @@ All notable changes to this project are documented in this file.
   animation, bold stencil display font ("Black Ops One").
 - A dedicated, configurable color for the Rest-between-cycles phase (`cycleRest`), distinct from
   the ordinary between-round Rest color, across all 5 phase-color presets.
+- Completion overlay now shows both "Total time" and "Time worked": "Total time" is the sum of
+  the *configured* Exercise + Rest + Rest-between-cycles + Cooldown durations (excludes Prepare;
+  falls back to actual elapsed time for Stopwatch, which has no fixed total), and "Time worked" is
+  the time actually spent in Exercise phases (or the ascending run for Stopwatch) — saved on each
+  history entry as `workedDurationMs`.
 
 ### Fixed
 - Tabata: the final Exercise phase's rest could be skipped when it shouldn't have been; the
