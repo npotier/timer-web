@@ -5,19 +5,20 @@ export const PHASE_LABELS = {
   prepare: 'PREPARE',
   exercise: 'WORK',
   rest: 'REST',
-  'rest-between-cycles': 'REST',
+  'rest-between-cycles': 'CYCLE REST',
   cooldown: 'COOLDOWN',
   'stopwatch-run': 'GO',
 };
 
-// Maps each session phase to one of the three user-configurable Settings.phaseColors (FR-005,
-// FR-023): Prepare keeps its own color; Rest-between-cycles and Cooldown reuse Rest (same
-// "not working" meaning); Stopwatch's running phase reuses Exercise (the "go" color).
+// Maps each session phase to one of the four user-configurable Settings.phaseColors (FR-005,
+// FR-023): Prepare keeps its own color; Rest-between-cycles gets its own distinct color so it's
+// visually distinguishable from the ordinary between-round Rest; Cooldown reuses Rest (same "not
+// working" meaning); Stopwatch's running phase reuses Exercise (the "go" color).
 const PHASE_COLOR_KEY = {
   prepare: 'prepare',
   exercise: 'exercise',
   rest: 'rest',
-  'rest-between-cycles': 'rest',
+  'rest-between-cycles': 'cycleRest',
   cooldown: 'rest',
   'stopwatch-run': 'exercise',
 };

@@ -18,6 +18,12 @@
        CDN. If this fails to load (e.g. offline first visit), _celebrate() in app.js no-ops. -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js" defer></script>
 
+  <!-- Encouragement message font: a bold stencil/military display face for a "warrior" feel.
+       Falls back to the default sans stack if offline (see .font-warrior below). -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&display=swap" rel="stylesheet" />
+
   <style>
     html, body { height: 100%; overscroll-behavior: none; }
     body { background-color: #18181b; color: #fff; }
@@ -31,6 +37,20 @@
       100% { transform: scale(1); }
     }
     .animate-pop { animation: pulse-pop 0.3s ease-out; }
+
+    /* Encouragement message: bouncy drop-in with a playful wiggle, a confident hold, then a
+       quick slide-up-and-shrink exit — timed to match the 3s display window in app.js
+       (_showEncouragement) so the exit finishes right as it's removed. */
+    @keyframes encourage-fade {
+      0%   { opacity: 0; transform: translateY(-30px) scale(0.4) rotate(-6deg); }
+      35%  { opacity: 1; transform: translateY(4px) scale(1.1) rotate(3deg); }
+      50%  { transform: translateY(-2px) scale(0.98) rotate(-2deg); }
+      65%  { transform: translateY(0) scale(1.03) rotate(1deg); }
+      80%  { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
+      100% { opacity: 0; transform: translateY(-16px) scale(0.85) rotate(0deg); }
+    }
+    .animate-encourage { animation: encourage-fade 3s cubic-bezier(.34, 1.56, .64, 1) forwards; }
+    .font-warrior { font-family: 'Black Ops One', Impact, 'Arial Narrow Bold', sans-serif; }
   </style>
 </head>
 <body class="h-full">
@@ -212,6 +232,15 @@
         </div>
       </div>
 
+      <!-- Encouragement message (Settings.encouragementEnabled): a non-blocking banner under the
+           top bar so it never covers the countdown digits — fades in/out over the 3s display
+           window (see app.js _showEncouragement / animate-encourage keyframes). -->
+      <div x-show="encouragementMessage" class="absolute top-16 inset-x-0 flex justify-center px-6 pointer-events-none">
+        <div class="animate-encourage font-warrior bg-white rounded-full px-5 py-2 max-w-[90%] text-lg md:text-2xl uppercase tracking-wide text-center shadow-xl"
+             :style="`color:${settings.phaseColors.exercise}`"
+             x-text="encouragementMessage"></div>
+      </div>
+
       <!-- Completion overlay -->
       <div x-show="sessionState.status === 'finished' || sessionState.status === 'stopped'"
            class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center gap-4 text-white">
@@ -333,7 +362,7 @@
         </div>
 
         <div class="flex items-center justify-between">
-          <span>Tick sound (every second)</span>
+          <span>Tick sound (last 3 seconds)</span>
           <input type="checkbox" x-model="settings.tickSoundEnabled" @change="onSettingsChange()" class="h-6 w-11 accent-[var(--accent)]" />
         </div>
 
@@ -354,8 +383,23 @@
 
         <hr class="border-zinc-800" />
 
+        <div class="flex items-center justify-between">
+          <div>
+            <div>Encouragement</div>
+            <p class="text-xs text-zinc-400">Motivational messages at 25/50/75% of each exercise.</p>
+          </div>
+          <input type="checkbox" x-model="settings.encouragementEnabled" @change="onSettingsChange()" class="h-6 w-11 accent-[var(--accent)] shrink-0 ml-3" />
+        </div>
+        <div x-show="settings.encouragementEnabled">
+          <label class="text-xs uppercase text-zinc-400 block mb-1">Your first name</label>
+          <input type="text" maxlength="20" x-model="settings.encouragementName" @change="onSettingsChange()"
+                 placeholder="e.g. Alex" class="w-full bg-zinc-800 rounded-lg p-3 outline-none" />
+        </div>
+
+        <hr class="border-zinc-800" />
+
         <div>
-          <label class="text-xs uppercase text-zinc-400 block mb-2">Phase colors — Prepare / Work / Rest</label>
+          <label class="text-xs uppercase text-zinc-400 block mb-2">Phase colors — Prepare / Work / Rest / Cycle rest</label>
           <div class="flex flex-wrap gap-3 mb-4">
             <template x-for="preset in phaseColorPresets" :key="preset.name">
               <button type="button" @click="applyPhaseColorPreset(preset)"
@@ -365,11 +409,12 @@
                 <span class="w-4 h-full" :style="`background-color:${preset.prepare}`"></span>
                 <span class="w-4 h-full" :style="`background-color:${preset.exercise}`"></span>
                 <span class="w-4 h-full" :style="`background-color:${preset.rest}`"></span>
+                <span class="w-4 h-full" :style="`background-color:${preset.cycleRest}`"></span>
               </button>
             </template>
           </div>
 
-          <div class="grid grid-cols-3 gap-3">
+          <div class="grid grid-cols-4 gap-3">
             <label class="flex flex-col items-center gap-1 text-xs text-zinc-400 uppercase">
               Prepare
               <input type="color" x-model="settings.phaseColors.prepare" @change="onSettingsChange()" class="h-10 w-full rounded-lg bg-transparent" />
@@ -381,6 +426,10 @@
             <label class="flex flex-col items-center gap-1 text-xs text-zinc-400 uppercase">
               Rest
               <input type="color" x-model="settings.phaseColors.rest" @change="onSettingsChange()" class="h-10 w-full rounded-lg bg-transparent" />
+            </label>
+            <label class="flex flex-col items-center gap-1 text-xs text-zinc-400 uppercase">
+              Cycle rest
+              <input type="color" x-model="settings.phaseColors.cycleRest" @change="onSettingsChange()" class="h-10 w-full rounded-lg bg-transparent" />
             </label>
           </div>
         </div>

@@ -118,14 +118,15 @@ A user wants the timer's audio/haptic feedback to suit their environment (e.g., 
 - **FR-020**: The system MUST NOT require any heart-rate sensor, Bluetooth device, user account, server-side storage, or voice-synthesis feature; all behavior described above must work without any of these.
 - **FR-021**: The system's UI text MUST be presented in English only for this version.
 - **FR-022**: The Settings screen MUST provide a single "Fun mode" toggle (default off) that, when enabled, adds purely decorative/motivational feedback — an animated progress indicator and bouncy countdown digit during a session, and a brief celebratory animation when a session is completed in full (not on an early stop) — without altering any timer, round, or cycle behavior.
-- **FR-023**: The Settings screen MUST let the user customize the Prepare/Exercise/Rest phase colors from FR-005, offering at least 5 named color-trio presets (one themed after Olympique de Marseille) plus an individual custom color picker per phase.
+- **FR-023**: The Settings screen MUST let the user customize the Prepare/Exercise/Rest/Rest-between-cycles phase colors from FR-005, offering at least 5 named color presets (one themed after Olympique de Marseille) plus an individual custom color picker per phase.
+- **FR-024**: The Settings screen MUST provide a single "Encouragement" toggle (default off) and an optional first-name field that, when enabled, show a random motivational message (in English, optionally including the user's name) at 25%, 50%, and 75% elapsed through each Exercise phase of a session, without altering any timer, round, or cycle behavior.
 
 ### Key Entities
 
 - **Workout Template**: A named, reusable interval configuration — attributes: name, color, mode (Tabata/Rounds/Stopwatch-style), Prepare duration, Exercise duration, Rest duration, Rounds count, Cycles count, Rest-between-cycles duration, Cooldown duration. User-created templates are stored durably; built-in mode defaults are not user-deletable but are copyable into a new custom template.
 - **Session**: A single run-through of a Workout Template or ad-hoc mode configuration — attributes: which template/mode was used, start time, current phase, elapsed/remaining time, rounds/cycles completed so far, paused/running/finished state. Exists only while active; on completion or stop it produces a History Entry.
 - **History Entry**: A persisted record of a finished or stopped Session — attributes: workout name/mode, date/time, total duration, rounds completed, cycles completed, completion status (finished vs. stopped early).
-- **Settings**: A single persisted set of user preferences — attributes: sound effects on/off, selected sound preset, volume level, tick sound on/off, vibration on/off.
+- **Settings**: A single persisted set of user preferences — attributes: sound effects on/off, selected sound preset, volume level, tick sound on/off, vibration on/off, Fun mode on/off, Encouragement on/off with optional first name, phase colors.
 
 ## Success Criteria *(mandatory)*
 

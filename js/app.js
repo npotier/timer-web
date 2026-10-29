@@ -8,7 +8,7 @@ import {
   phaseLabel, phaseStyle, formatDuration, formatElapsed, ringDashoffset, RING_CIRCUMFERENCE,
 } from './views/session-view.js';
 import { createEmptyTemplate, duplicateTemplate, validateTemplate } from './views/editor-view.js';
-import { SOUND_PRESETS, formatVolumePercent } from './views/settings-view.js';
+import { SOUND_PRESETS, formatVolumePercent, pickEncouragementMessage } from './views/settings-view.js';
 import { PHASE_COLOR_PRESETS } from './storage.js';
 import { formatHistoryEntry } from './views/history-view.js';
 import { icon } from './icons.js';
@@ -17,7 +17,10 @@ function appRoot() {
   const engine = new TimerEngine();
   let tickHandle = null;
   let lastWholeSecond = null;
+  let lastCountdownSecond = null;
   let pulseTimeoutHandle = null;
+  let encouragementThresholdsShown = new Set();
+  let encouragementTimeoutHandle = null;
 
   return {
     // --- state ---
@@ -37,6 +40,7 @@ function appRoot() {
     phaseColorPresets: PHASE_COLOR_PRESETS,
     pulseActive: false,
     ringCircumference: RING_CIRCUMFERENCE,
+    encouragementMessage: null,
 
     // --- lifecycle ---
     init() {
@@ -124,9 +128,12 @@ function appRoot() {
     _startTickLoop() {
       this._stopTickLoop();
       lastWholeSecond = null;
+      lastCountdownSecond = null;
       tickHandle = window.setInterval(() => {
         this.sessionState = engine.resync();
         this._maybePulse();
+        this._maybeCountdownBeep();
+        this._maybeEncourage();
         if (this.sessionState.status === SESSION_STATUS.FINISHED || this.sessionState.status === SESSION_STATUS.STOPPED) {
           this._stopTickLoop();
         }
@@ -159,6 +166,42 @@ function appRoot() {
       });
     },
 
+    // Tick sound (Settings → Tick sound): a short beep on the last 3 seconds (3, 2, 1) of any
+    // timed phase, so a countdown is audible without looking at the screen. Stopwatch's ascending
+    // run phase has no "end" to count down to, so it's excluded.
+    _maybeCountdownBeep() {
+      const phase = this.sessionState.currentPhase;
+      if (!phase || phase.type === 'stopwatch-run') return;
+      const wholeSecond = Math.ceil(this.sessionState.remainingMs / 1000);
+      if (wholeSecond === lastCountdownSecond) return;
+      lastCountdownSecond = wholeSecond;
+      if (wholeSecond >= 1 && wholeSecond <= 3) {
+        audio.playTick(this.settings);
+      }
+    },
+
+    // Encouragement mode: at 25/50/75% elapsed into the current Exercise phase, show a random
+    // motivational message. Resets per phase (see _onPhaseChange) so it re-fires every round.
+    _maybeEncourage() {
+      if (!this.settings.encouragementEnabled) return;
+      const phase = this.sessionState.currentPhase;
+      if (!phase || phase.type !== 'exercise') return;
+      const duration = phase.durationMs;
+      if (!Number.isFinite(duration) || duration <= 0) return;
+      const fraction = this.sessionState.elapsedInPhaseMs / duration;
+      [0.25, 0.5, 0.75].forEach((threshold) => {
+        if (fraction >= threshold && !encouragementThresholdsShown.has(threshold)) {
+          encouragementThresholdsShown.add(threshold);
+          this._showEncouragement();
+        }
+      });
+    },
+
+    _showEncouragement() {
+      this.encouragementMessage = pickEncouragementMessage(this.settings.encouragementName);
+      if (encouragementTimeoutHandle) window.clearTimeout(encouragementTimeoutHandle);
+      encouragementTimeoutHandle = window.setTimeout(() => { this.encouragementMessage = null; }, 3000);
+    },
 
     togglePause() {
       this.sessionState = this.sessionState.status === SESSION_STATUS.RUNNING ? engine.pause() : engine.resume();
@@ -182,6 +225,8 @@ function appRoot() {
     },
 
     _onPhaseChange(state) {
+      encouragementThresholdsShown = new Set();
+      this.encouragementMessage = null;
       if (!state.currentPhase) return;
       audio.playCue(state.currentPhase.type, this.settings);
       haptics.vibrate(120, this.settings);
@@ -299,13 +344,19 @@ function appRoot() {
     },
 
     applyPhaseColorPreset(preset) {
-      this.settings.phaseColors = { prepare: preset.prepare, exercise: preset.exercise, rest: preset.rest };
+      this.settings.phaseColors = {
+        prepare: preset.prepare,
+        exercise: preset.exercise,
+        rest: preset.rest,
+        cycleRest: preset.cycleRest,
+      };
       this.onSettingsChange();
     },
 
     isActivePhaseColorPreset(preset) {
       const c = this.settings.phaseColors;
-      return c.prepare === preset.prepare && c.exercise === preset.exercise && c.rest === preset.rest;
+      return c.prepare === preset.prepare && c.exercise === preset.exercise && c.rest === preset.rest
+        && c.cycleRest === preset.cycleRest;
     },
 
     // --- history ---

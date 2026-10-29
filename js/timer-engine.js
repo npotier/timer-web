@@ -44,10 +44,12 @@ export function buildPhaseSequence(template) {
     for (let round = 1; round <= rounds; round += 1) {
       phases.push({ type: PHASE_TYPES.EXERCISE, durationMs: exerciseMs, roundNumber: round, cycleNumber: cycle });
       const isLastRoundOfCycle = round === rounds;
-      if (restMs > 0 && !(isLastRoundOfCycle && cycle === cycles)) {
-        phases.push({ type: PHASE_TYPES.REST, durationMs: restMs, roundNumber: round, cycleNumber: cycle });
-      } else if (restMs > 0 && isLastRoundOfCycle && cycle === cycles && cooldownMs === 0) {
-        // Keep the final rest so a Tabata workout doesn't skip the last planned rest window.
+      const isVeryLastRound = isLastRoundOfCycle && cycle === cycles;
+      // A round-rest (REST_BETWEEN_CYCLES) will follow this cycle, so no exercise-rest here too.
+      const willHaveCycleRest = template.mode === 'tabata' && cycle < cycles && restBetweenCyclesMs > 0;
+      const skipExerciseRest = isLastRoundOfCycle
+        && (willHaveCycleRest || (isVeryLastRound && cooldownMs > 0));
+      if (restMs > 0 && !skipExerciseRest) {
         phases.push({ type: PHASE_TYPES.REST, durationMs: restMs, roundNumber: round, cycleNumber: cycle });
       }
     }

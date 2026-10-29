@@ -9,17 +9,17 @@ const KEYS = {
   SETTINGS: 'timerweb.settings.v1',
 };
 
-// Phase color presets (Settings → Phase colors). Each preset defines the three colors shown
-// full-screen during a session (FR-005: Prepare / Exercise+Work / Rest — Rest-between-cycles and
-// Cooldown reuse the Rest color, Stopwatch's running phase reuses the Exercise color). The
-// Exercise color doubles as the app's interactive accent (Start button, active tab), matching the
-// reference app where the "go" color and the UI accent are the same green.
+// Phase color presets (Settings → Phase colors). Each preset defines the four colors shown
+// full-screen during a session (FR-005: Prepare / Exercise+Work / Rest / Cycle rest — Cooldown
+// reuses the Rest color, Stopwatch's running phase reuses the Exercise color). The Exercise color
+// doubles as the app's interactive accent (Start button, active tab), matching the reference app
+// where the "go" color and the UI accent are the same green.
 export const PHASE_COLOR_PRESETS = [
-  { name: 'Classic', prepare: '#facc15', exercise: '#a3e635', rest: '#ef4444' },
-  { name: 'Marseille', prepare: '#0a2342', exercise: '#00a3e0', rest: '#ffffff' },
-  { name: 'Sunset', prepare: '#fde047', exercise: '#fb923c', rest: '#e11d48' },
-  { name: 'Berry', prepare: '#fbbf24', exercise: '#ec4899', rest: '#be123c' },
-  { name: 'Grape', prepare: '#fcd34d', exercise: '#8b5cf6', rest: '#5b21b6' },
+  { name: 'Classic', prepare: '#facc15', exercise: '#a3e635', rest: '#ef4444', cycleRest: '#f97316' },
+  { name: 'Marseille', prepare: '#0a2342', exercise: '#00a3e0', rest: '#ffffff', cycleRest: '#7dd3fc' },
+  { name: 'Sunset', prepare: '#fde047', exercise: '#fb923c', rest: '#e11d48', cycleRest: '#9333ea' },
+  { name: 'Berry', prepare: '#fbbf24', exercise: '#ec4899', rest: '#be123c', cycleRest: '#7e22ce' },
+  { name: 'Grape', prepare: '#fcd34d', exercise: '#8b5cf6', rest: '#5b21b6', cycleRest: '#c026d3' },
 ];
 
 const DEFAULT_SETTINGS = Object.freeze({
@@ -29,7 +29,14 @@ const DEFAULT_SETTINGS = Object.freeze({
   tickSoundEnabled: false,
   vibrationEnabled: false,
   funMode: false,
-  phaseColors: { prepare: PHASE_COLOR_PRESETS[0].prepare, exercise: PHASE_COLOR_PRESETS[0].exercise, rest: PHASE_COLOR_PRESETS[0].rest },
+  encouragementEnabled: false,
+  encouragementName: '',
+  phaseColors: {
+    prepare: PHASE_COLOR_PRESETS[0].prepare,
+    exercise: PHASE_COLOR_PRESETS[0].exercise,
+    rest: PHASE_COLOR_PRESETS[0].rest,
+    cycleRest: PHASE_COLOR_PRESETS[0].cycleRest,
+  },
 });
 
 export const BUILTIN_TEMPLATES = [
