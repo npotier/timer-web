@@ -344,6 +344,15 @@ function appRoot() {
       storage.saveSettings(this.settings);
     },
 
+    // Preview the newly selected sound preset immediately so the user can hear it without
+    // starting a session. Selecting an <option> counts as a user gesture, so it's safe to
+    // (lazily) init the AudioContext here too.
+    onSoundPresetChange() {
+      this.onSettingsChange();
+      audio.initOnFirstGesture();
+      audio.playCue('exercise', this.settings);
+    },
+
     applyPhaseColorPreset(preset) {
       this.settings.phaseColors = {
         prepare: preset.prepare,

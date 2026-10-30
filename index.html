@@ -357,7 +357,7 @@
 
         <div>
           <label class="text-xs uppercase text-zinc-400 block mb-1">Sound preset</label>
-          <select x-model="settings.soundPreset" @change="onSettingsChange()" class="w-full bg-zinc-800 rounded-lg p-3 outline-none">
+          <select x-model="settings.soundPreset" @change="onSoundPresetChange()" class="w-full bg-zinc-800 rounded-lg p-3 outline-none">
             <template x-for="preset in soundPresets" :key="preset">
               <option :value="preset" x-text="preset"></option>
             </template>
